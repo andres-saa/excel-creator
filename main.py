@@ -55,7 +55,7 @@ def crear_excel(request: ExcelRequest):
             title_cell = ws.cell(row=1, column=1)
             title_cell.value = sheet.title
             title_cell.font = Font(size=14, bold=True)
-            title_cell.alignment = Alignment(horizontal='center')
+            title_cell.alignment = Alignment(horizontal='center', wrap_text=True)  # Habilitar ajuste de texto
             
             # Agregar los encabezados de columna
             headers = list(sheet.column_widths.keys())
@@ -63,7 +63,7 @@ def crear_excel(request: ExcelRequest):
                 cell = ws.cell(row=2, column=col_num)
                 cell.value = header
                 cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal='center')
+                cell.alignment = Alignment(horizontal='center', wrap_text=True)  # Habilitar ajuste de texto
                 # Establecer el ancho de la columna
                 ws.column_dimensions[get_column_letter(col_num)].width = sheet.column_widths[header]
             
@@ -71,8 +71,15 @@ def crear_excel(request: ExcelRequest):
             for row_num, row_data in enumerate(sheet.data, start=3):
                 for col_num, header in enumerate(headers, 1):
                     value = row_data.get(header, "")
-                    ws.cell(row=row_num, column=col_num).value = value
-        
+                    cell = ws.cell(row=row_num, column=col_num)
+                    cell.value = value
+                    # Habilitar ajuste de texto para las celdas de datos
+                    cell.alignment = Alignment(wrap_text=True)
+            
+            # Opcional: Ajustar la altura de las filas automáticamente
+            # Nota: OpenPyXL no soporta auto ajuste de altura de filas, pero Excel lo hace al abrir el archivo
+            # Por lo tanto, no es necesario establecer la altura manualmente
+
         # Guardar el libro en un buffer en memoria
         buffer = BytesIO()
         wb.save(buffer)
