@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 from openpyxl import Workbook
@@ -8,6 +9,22 @@ from io import BytesIO
 from fastapi.responses import StreamingResponse
 
 app = FastAPI()
+
+# Configuración de CORS
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "https://tudominio.com",
+    # Agrega otros dominios según tus necesidades
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,            # Orígenes permitidos
+    allow_credentials=True,           # Permitir el envío de cookies y credenciales
+    allow_methods=["*"],              # Métodos HTTP permitidos (GET, POST, etc.)
+    allow_headers=["*"],              # Encabezados permitidos
+)
 
 # Definición de los modelos Pydantic para validar el JSON de entrada
 class SheetData(BaseModel):
