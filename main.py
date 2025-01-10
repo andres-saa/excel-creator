@@ -10,20 +10,13 @@ from fastapi.responses import StreamingResponse
 
 app = FastAPI()
 
-# Configuración de CORS
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "https://tudominio.com",
-    # Agrega otros dominios según tus necesidades
-]
-
+# Configuración de CORS para permitir todos los orígenes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,            # Orígenes permitidos
-    allow_credentials=True,           # Permitir el envío de cookies y credenciales
-    allow_methods=["*"],              # Métodos HTTP permitidos (GET, POST, etc.)
-    allow_headers=["*"],              # Encabezados permitidos
+    allow_origins=["*"],            # Permitir todos los orígenes
+    allow_credentials=True,         # Permitir el envío de cookies y credenciales
+    allow_methods=["*"],            # Permitir todos los métodos HTTP (GET, POST, etc.)
+    allow_headers=["*"],            # Permitir todos los encabezados
 )
 
 # Definición de los modelos Pydantic para validar el JSON de entrada
@@ -87,7 +80,7 @@ def crear_excel(request: ExcelRequest):
         
         # Preparar la respuesta como un archivo de Excel
         headers = {
-            'Content-Disposition': f'attachment; filename=archivo_multisheets.xlsx'
+            'Content-Disposition': 'attachment; filename=archivo_multisheets.xlsx'
         }
         return StreamingResponse(
             buffer,
