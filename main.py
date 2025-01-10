@@ -76,6 +76,14 @@ def crear_excel(request: ExcelRequest):
                     # Habilitar ajuste de texto para las celdas de datos
                     cell.alignment = Alignment(wrap_text=True)
             
+            # Habilitar el filtrado automático en las columnas
+            # Determinar el rango de la tabla (desde la primera columna hasta la última, y desde la fila de encabezados hasta la última fila de datos)
+            last_row = ws.max_row
+            last_col = len(headers)
+            start_cell = f"A2"
+            end_cell = f"{get_column_letter(last_col)}{last_row}"
+            ws.auto_filter.ref = f"{start_cell}:{end_cell}"
+            
             # Opcional: Ajustar la altura de las filas automáticamente
             # Nota: OpenPyXL no soporta auto ajuste de altura de filas, pero Excel lo hace al abrir el archivo
             # Por lo tanto, no es necesario establecer la altura manualmente
