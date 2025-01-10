@@ -55,7 +55,7 @@ def crear_excel(request: ExcelRequest):
             title_cell = ws.cell(row=1, column=1)
             title_cell.value = sheet.title
             title_cell.font = Font(size=14, bold=True)
-            title_cell.alignment = Alignment(horizontal='center', wrap_text=True)  # Habilitar ajuste de texto
+            title_cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)  # Alineación vertical centrada
             
             # Agregar los encabezados de columna
             headers = list(sheet.column_widths.keys())
@@ -63,7 +63,7 @@ def crear_excel(request: ExcelRequest):
                 cell = ws.cell(row=2, column=col_num)
                 cell.value = header
                 cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal='center', wrap_text=True)  # Habilitar ajuste de texto
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)  # Alineación vertical centrada
                 # Establecer el ancho de la columna
                 ws.column_dimensions[get_column_letter(col_num)].width = sheet.column_widths[header]
             
@@ -73,8 +73,8 @@ def crear_excel(request: ExcelRequest):
                     value = row_data.get(header, "")
                     cell = ws.cell(row=row_num, column=col_num)
                     cell.value = value
-                    # Habilitar ajuste de texto para las celdas de datos
-                    cell.alignment = Alignment(wrap_text=True)
+                    # Alineación vertical centrada
+                    cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
             
             # Habilitar el filtrado automático en las columnas
             # Determinar el rango de la tabla (desde la primera columna hasta la última, y desde la fila de encabezados hasta la última fila de datos)
