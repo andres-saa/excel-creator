@@ -1,12 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
-from openpyxl import Workbook
+from openpyxl import Workbook,load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 
 app = FastAPI()
 
@@ -102,6 +102,98 @@ def crear_excel(request: ExcelRequest):
             media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             headers=headers
         )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.post("/excel-a-json")
+async def excel_a_json(file: UploadFile = File(...)):
+    """
+    Endpoint inverso que recibe un archivo Excel y devuelve un JSON
+    con la misma estructura que la clase ExcelRequest.
+    """
+    try:
+        # Verificar que el contenido sea un archivo de Excel
+        if not file.filename.endswith(('.xlsx', '.xlsm')):
+            raise HTTPException(status_code=400, detail="El archivo proporcionado no es un Excel válido.")
+
+        # Cargar el archivo en memoria
+        contents = await file.read()
+        
+        # Cargar el libro de Excel con openpyxl
+        wb = load_workbook(filename=BytesIO(contents), data_only=True)
+        
+        # Estructura final a retornar
+        hojas_data = []
+
+        for ws in wb.worksheets:
+            # 1) Nombre de la hoja
+            hoja_nombre = ws.title
+            
+            # 2) Título (asumimos que está en la celda A1, fila 1, col 1)
+            title_cell = ws.cell(row=1, column=1).value
+            # Evitar error si la celda está vacía
+            title_value = title_cell if title_cell else ""
+            
+            # 3) Leer los encabezados (fila 2)
+            headers = []
+            col = 1
+            while True:
+                cell_value = ws.cell(row=2, column=col).value
+                if cell_value is None:
+                    # Se asume que cuando ya no hay encabezado, se termina
+                    break
+                headers.append(cell_value)
+                col += 1
+            
+            # 4) Reconstruir column_widths 
+            #    (mapeando cada "header" a su ancho de columna, si existe)
+            column_widths = {}
+            for idx, header in enumerate(headers, start=1):
+                column_letter = get_column_letter(idx)
+                # Puede retornar None si la columna no tiene ancho asignado explícitamente
+                col_width = ws.column_dimensions[column_letter].width
+                # Si no hubiera ancho establecido, coloca un valor por defecto
+                column_widths[header] = col_width if col_width else 10.0
+            
+            # 5) Leer los datos desde la fila 3 en adelante
+            data = []
+            row_num = 3
+            while True:
+                # Detectar si la fila ya no tiene datos
+                # Se hace revisando si en la columna 1 ya no hay nada
+                first_col_value = ws.cell(row=row_num, column=1).value
+                if first_col_value is None:
+                    # Podrías refinar la condición para datos esparcidos, 
+                    # pero se asume que si la primera columna está vacía, se acabaron los datos
+                    break
+                
+                # Construir el diccionario para la fila
+                row_dict = {}
+                for col_idx, header in enumerate(headers, start=1):
+                    cell_value = ws.cell(row=row_num, column=col_idx).value
+                    row_dict[header] = cell_value
+                data.append(row_dict)
+                row_num += 1
+            
+            # 6) Armar la estructura tipo SheetData
+            sheet_info = {
+                "hoja": hoja_nombre,
+                "title": title_value,
+                "column_widths": column_widths,
+                "data": data
+            }
+            
+            hojas_data.append(sheet_info)
+        
+        # 7) Retornar la respuesta en la misma estructura que ExcelRequest
+        response = {
+            "hojas": hojas_data
+        }
+        
+        return JSONResponse(content=response, status_code=200)
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
